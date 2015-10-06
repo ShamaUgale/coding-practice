@@ -1,0 +1,78 @@
+<project name="JourneyPlanner" basedir="." default="main">
+
+    <property name="src.dir"     value="src/java"/>
+    <property name="src.test.dir"     value="src/java-test"/>
+
+    <property name="lib.dir"     value="lib"/>
+    <property name="build.dir"   value="build"/>
+    <property name="classes.dir" value="${build.dir}/classes"/>
+    <property name="classes.test.dir" value="${build.dir}/testclasses"/>
+    <property name="jar.dir"     value="${build.dir}/jar"/>
+    <property name="test.dir"   value="build/test"/>
+
+    <property name="main-class"  value="com.tw.journey.JourneyPlanner"/>
+
+    <path id="class.path">
+		<pathelement location="${classes.dir}" />
+		<fileset dir="${lib.dir}">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+    </target>
+
+    <target name="compile">
+        <mkdir dir="${classes.dir}"/>
+        <javac srcdir="${src.dir}" destdir="${classes.dir}"/>
+    </target>
+
+    <target name="jar" depends="compile">
+        <mkdir dir="${jar.dir}"/>
+        <jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
+            <manifest>
+                <attribute name="Main-Class" value="${main-class}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="test-compile" depends="compile">
+        <mkdir dir="${classes.test.dir}"/>
+        <javac srcdir="${src.test.dir}" destdir="${classes.test.dir}" classpathref="class.path"/>
+    </target>
+
+    <target name="test" depends="test-compile">
+    	<delete dir="${test.dir}" quiet="true"/>
+		<mkdir dir="${test.dir}/output"/>
+		<mkdir dir="${test.dir}/report"/>
+        <junit printsummary="on" failureproperty="junit.failure" tempdir="${test.dir}">
+			<classpath refid="class.path"/>
+			<classpath path="${classes.test.dir}"/>
+			<assertions>
+				<enable/>
+			</assertions>
+			<formatter type="xml"/>
+			<batchtest todir="${test.dir}/output">
+				<fileset dir="${src.test.dir}">
+					<include name="**/*Test.java"/>
+				</fileset>
+			</batchtest>
+		</junit>
+		<junitreport todir="${test.dir}/report">
+			<fileset dir="${test.dir}/output"/>
+			<report todir="${test.dir}/report"/>
+		</junitreport>
+		<echo>Test Report: ${test.dir}/report/index.html</echo>
+		<fail if="junit.failure" message="Unit test failed"/>
+    </target>
+
+    <target name="run" depends="jar">
+        <java jar="${jar.dir}/${ant.project.name}.jar" fork="true"/>
+    </target>
+
+    <target name="clean-build" depends="clean,jar"/>
+
+    <target name="main" depends="clean,run"/>
+
+</project>
